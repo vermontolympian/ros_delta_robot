@@ -20,40 +20,39 @@
 	<arg name="baud" 				 default="57600"/>
 
 	<!-- Load the URDF to the parameter server -->
-	<param name="robot_description" command="$(find xacro)/xacro --inorder '$(find delta_robot_support)/urdf/delta_robot.urdf'" />
-
+	<arg name="model" default="$(find delta_robot_support)/urdf/delta_robot.urdf.xacro"/>
+	<param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
 <!--
 	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
 		<param name="use_gui" value="false"/>
 		<rosparam param="source_list">[delta_robot/joint_states]</rosparam>
 	</node>
--->
-	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-	<!-- Convert joint states to /tf tranforms -->
-	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+-->	
+<!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /> -->
+
+	<!-- <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" />
+	<! Convert joint states to /tf tranforms -->
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/> 
 
 	<!-- Load all available controllers -->
   	<rosparam file="$(find delta_robot_support)/config/controllers.yaml" command="load"/>
+
+	<rosparam command="load"
+            file="$(find delta_robot_support)/config/joints.yaml"
+            ns="delta_joint_state_controller" />
+
+	<rosparam command="load"
+            file="$(find delta_robot_support)/config/arms.yaml"
+            ns="arms_joint_state_controller" />
+
+	<node name="delta_controller_spawner" pkg="controller_manager" type="spawner"
+    	  args="delta_joint_state_controller
+		  		arms_joint_state_controller
+          		"/> 
+
 	<!-- Load controller manager -->
 
-	<node ns="delta_robot" name="controller_spawner"
-				pkg="controller_manager"
-				type="spawner"
-				respawn="false"
-				output="screen"
-				args="delta_joint_state_controller delta_position_trajectory_controller"/>
 
-	
-
-	<group if="$(arg arduino)">
-		<node ns="delta_robot" name="arduino_node"
-				  pkg="rosserial_python"
-					type="serial_node.py"
-					output="screen">
-			<param name="~port" value="$(arg port)" />
-	    <param name="~baud" value="$(arg baud)" />
-		</node>
-	</group>
 
 
 	<!-- Load the simulation environment -->
@@ -66,7 +65,7 @@
 			<arg name="use_sim_time" value="$(arg use_sim_time)"/>
 			<arg name="headless" value="$(arg headless)"/>
 		</include>
-		<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"  args="-urdf -model delta_robot -param robot_description"/>
+		<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" args="-z 1.0 -unpause -urdf -model robot -param robot_description" respawn="false" output="screen" />
 	</group>
 	<!-- rviz
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find delta_robot_support)/config/delta.rviz"/>

@@ -1,0 +1,4 @@
+gazebo_ros_control:
+  pid_gains:
+    link_0_JOINT1:
+      p: 1

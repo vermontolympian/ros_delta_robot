@@ -21,7 +21,7 @@
   <xacro:property name="width_lleg" value="0.002" /> <!-- low leg width -->
   <xacro:property name="mass_con" value="0.0173" /> <!-- connector mass-->
 
-  <xacro:property name="namespace" value="delta" />
+  <xacro:property name="namespace" value="delta_robot" />
 
   <xacro:macro name="default_inertial2" params="mass length width">
 	 <inertia ixx="${1/12*mass*(width*width+length*length)}" ixy="0.0" ixz="0.0"
@@ -146,7 +146,7 @@
       <origin xyz="0 -${1.717/6*length_base} 0" rpy="0 0 0"/>
     	<parent link="link_0"/>
     	<child link="uleg_1"/>
-      <limit effort="20" velocity="1.0" lower="-1.1" upper="1.1" />
+      <limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
       <axis xyz="1 0 0"/>
     </joint>
 
@@ -154,7 +154,7 @@
       <origin xyz="${-length_base/4} ${1.717/4*length_base-1.717/6*length_base+0.005} 0" rpy="0 0 ${4*PI/3}"/>
     	<parent link="link_0"/>
     	<child link="uleg_2"/>
-      <limit effort="20" velocity="1.0" lower="-1.1" upper="1.1" />
+      <limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
       <axis xyz="1 0 0"/>
     </joint>
 
@@ -162,7 +162,7 @@
       <origin xyz="${length_base/4} ${1.717/4*length_base-1.717/6*length_base} 0" rpy="0 0 ${2*PI/3}"/>
     	<parent link="link_0"/>
     	<child link="uleg_3"/>
-      <limit effort="20" velocity="1.0" lower="-1.1" upper="1.1" />
+      <limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
       <axis xyz="1 0 0"/>
     </joint>
 
@@ -716,7 +716,7 @@
 <!-- ****************************************************************** -->
 <!-- Joins trabsmisions motors for gazebo  -->
 <!-- ****************************************************************** -->
-       <transmission name="motor1_trans">
+       <!-- <transmission name="motor1_trans">
          <type>transmission_interface/SimpleTransmission</type>
          <joint name="link_0_JOINT_1">
            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
@@ -768,9 +768,9 @@
           <stopKd value="100000000.0" />
           <stopKp value="100000000.0" />
           <fudgeFactor value="0.5" />
-       </gazebo>
+       </gazebo> -->
 
-       <gazebo>
+       <!-- <gazebo>
            <gazebo_ros_controller_manager name="gazebo_ros_controller_manager" plugin="libgazebo_ros_controller_manager.so">
                 <alwaysOn>true</alwaysOn>
                 <updateRate>1000.0</updateRate>
@@ -778,14 +778,14 @@
                 <robotParam>robot_description</robotParam>
                 <audio name="gazebo_ros_controller_manager_dummy_iface" />
            </gazebo_ros_controller_manager>
-      </gazebo>
+      </gazebo> -->
 <!--
       <plugin name="copter_arm_sim_plugin" filename="libgazebo_ros_control.so">
         <robotNamespace>/delta_robot</robotNamespace>
       </plugin>
 -->
 
-        <gazebo>
+        <!-- <gazebo>
             <plugin name="gazebo_ros_f3d" filename="libgazebo_ros_f3d.so">
                 <alwaysOn>true</alwaysOn>
                 <updateRate>100.0</updateRate>
@@ -793,6 +793,42 @@
                 <topicName>base_link/f3d</topicName>
                 <frameName>${namespace}/low_base</frameName>
             </plugin>
-        </gazebo>
+        </gazebo> -->
+
+    <transmission name="motor1_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <actuator name="motor1">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+      <joint name="link_0_JOINT_1">
+        <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+    </transmission>
+
+    <transmission name="motor2_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <actuator name="motor2">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+      <joint name="link_0_JOINT_2">
+        <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+    </transmission>
+
+    <transmission name="motor3_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <actuator name="motor3">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+      <joint name="link_0_JOINT_3">
+        <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+    </transmission>
+    
+    <gazebo>
+      <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+         <robotNamespace>/</robotNamespace>
+       </plugin>
+    </gazebo>
 
 </robot>
