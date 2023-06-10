@@ -1,1 +1,0 @@
-## Delta robot image processor

@@ -24,3 +24,11 @@ delta_robot:
         joint3:
             trajectory: 0.60
             goal:       0.15
+delta/gazebo_ros_control:   
+  pid_gains:
+    link_0_JOINT_1:
+      p: 1
+    link_0_JOINT_2:
+      p: 1
+    link_0_JOINT_3:
+      p: 1
