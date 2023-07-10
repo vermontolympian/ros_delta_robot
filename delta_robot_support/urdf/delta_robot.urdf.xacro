@@ -5,17 +5,10 @@
   	<xacro:property name="u" value="0.075" /> <!-- Radius of Base -->
 	<xacro:property name="ul" value="0.1" /> <!-- Length of Upper Leg -->
 	<xacro:property name="ll" value="0.15" /> <!-- Length of Lower Leg -->
-
+	<xacro:property name="e" value="0.05" /> <!-- Radius of EE -->
+	<xacro:property name="base_height" value="1" /> <!-- Length of Lower Leg -->
 	
-  <xacro:property name="width_m" value="0.01" /> <!-- all links -->
-  <xacro:property name="length_m" value="0.03" /> <!-- all links -->
-
-  <xacro:property name="distance_ground" value="2" /> <!-- distance from ground if there is not a uav-->
-  <xacro:property name="distance_arm_uav" value="0.12" /> <!-- distance arm from uav-->
-  <xacro:property name="mass_base" value="0.48" /> <!-- base mass-->
-  <xacro:property name="mass_low_base" value="0.03" /> <!-- low base mass -->
-  <xacro:property name="length_base" value="0.3" /> <!-- base length -->
-  <xacro:property name="mass_uleg" value="0.0466" /> <!--upper leg mass-->
+	<xacro:property name="mass_uleg" value="0.0466" /> <!--upper leg mass-->
   <xacro:property name="length_uleg" value="0.2" /> <!-- upper leg length -->
   <xacro:property name="width_uleg" value="0.05" /> <!-- upper leg width -->
 
@@ -23,6 +16,9 @@
   <xacro:property name="length_lleg" value="0.2" /> <!-- low leg length-->
   <xacro:property name="width_lleg" value="0.002" /> <!-- low leg width -->
   <xacro:property name="mass_con" value="0.0173" /> <!-- connector mass-->
+	<xacro:property name="ULeg_mass" value="0.0483" /> <!-- EE mass-->
+	<xacro:property name="Base_mass" value="0.888"  /> <!-- EE mass-->
+	<xacro:property name="EE_mass"   value="0.0475" /> <!-- EE mass-->
 
   <xacro:property name="namespace" value="delta_robot" />
 
@@ -60,7 +56,7 @@
 	<gazebo reference="uleg_1">
 		<visual><material><script>
 			<uri>file://media/materials/scripts/gazebo.material</uri>
-			<name>Gazebo/Blue</name>
+			<name>Gazebo/Red</name>
 		</script></material></visual>
 	</gazebo>
 
@@ -87,7 +83,7 @@
 
 <!-- Fixed Base -->
 	<joint name="base" type="fixed">
-	  	<origin xyz="0 0 ${-distance_arm_uav+distance_ground}" rpy="0 0 0"/>
+	  	<origin xyz="0 0 ${base_height}" rpy="0 0 0"/>
 	 	<parent link="world"/>
 	 	<child link="link_0"/>
 	</joint>
@@ -122,7 +118,7 @@
 	
 <!-- Servo Joints -->
 	<joint name="link_0_JOINT_1" type="revolute">
-		<origin xyz="0 -${u} 0" rpy="0 0 0"/>
+		<origin xyz="0 -${u} 0" rpy="0.522 0 0"/>
 		<parent link="link_0"/>
 		<child link="uleg_1"/>
 		<limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
@@ -130,7 +126,7 @@
 	</joint>
 
 	<joint name="link_0_JOINT_2" type="revolute">
-		<origin xyz="${u*0.866} ${u*0.5} 0" rpy="0 0 ${2*PI/3}"/>
+		<origin xyz="${u*0.866} ${u*0.5} 0" rpy="0.522 0 ${2*PI/3}"/>
 		<parent link="link_0"/>
 		<child link="uleg_2"/>
 		<limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
@@ -138,7 +134,7 @@
 	</joint>
 
 	<joint name="link_0_JOINT_3" type="revolute">
-		<origin xyz="${u*-0.866} ${u*0.5} 0" rpy="0 0 ${4*PI/3}"/>
+		<origin xyz="${u*-0.866} ${u*0.5} 0" rpy="0.522 0 ${4*PI/3}"/>
 		<parent link="link_0"/>
 		<child link="uleg_3"/>
 		<limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
@@ -170,7 +166,7 @@
 
 	<link name="uleg_2">
 		<inertial>
-			<origin xyz="0 0 0 " rpy="${PI/2} 0 0"/>
+			<origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
 			<mass value="${mass_uleg}"/>
 			<xacro:default_inertial3 mass="${mass_uleg}" width="${length_uleg}" length="${width_uleg}" />
 		</inertial>
@@ -192,7 +188,7 @@
 
 	<link name="uleg_3">
 		<inertial>
-			<origin xyz="0 0 0 " rpy="${PI/2} 0 0"/>
+			<origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
 			<mass value="${mass_uleg}"/>
 			<xacro:default_inertial3 mass="${mass_uleg}" width="${length_uleg}" length="${width_uleg}" />
 		</inertial>
@@ -205,404 +201,328 @@
 		</visual>
 
 		<collision>
-			<origin xyz="0 0 0" rpy="${PI/2} ${PI} 0}"/>
+			<origin xyz="0 0 0" rpy="${PI/2} ${PI} 0"/>s
 			<geometry>
 			<mesh filename="package://delta_robot_support/urdf/meshes/Link1.stl" scale="0.001 0.001 0.001" />
 			</geometry>
 		</collision>
 	</link>
+
+<!-- ********************************************************************** -->
+<!-- Vertical Connector with "upper_leg" 1                                  -->
+<!-- ********************************************************************** -->
+<!-- horizontal bar of connection between "upper_leg1" and "lower_leg1ab"   -->
+	<joint name="uleg_1_to_elbow" type="continuous">
+		<origin xyz="0 -${ul} 0" rpy="0.3178 0 0"/>
+		<parent link="uleg_1"/>
+		<child link="leg1_elbow"/>
+		<axis xyz="1 0 0"/>
+	</joint>
+
+	<link name="leg1_elbow">
+		<inertial>
+			<origin xyz="0 0 0 " rpy="0 ${PI/2} 0"/>
+			<mass value="${mass_con}"/>
+			<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0 " rpy="0 ${PI/2} 0"/>
+			<geometry>
+			<cylinder length="0.04" radius="0.002" />
+			</geometry> 
+		</visual>
+	</link>
+<!-- long vertical rod 1a -->
+	<joint name="elbow_to_lleg_1a" type="continuous">
+		<origin xyz="-0.02 0 0" rpy="0 0 0"/>
+		<parent link="leg1_elbow"/>
+		<child link="lleg_1a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+
+	<link name="lleg_1a">
+		<inertial>
+			<origin xyz="0 0 ${-ll/2} " rpy="0 0 0"/>
+			<mass value="${mass_lleg}"/>
+			<xacro:default_inertial3 mass="${mass_lleg}" width="${ll}" length="${width_lleg}" />
+		</inertial>
+		<visual>
+			<origin xyz=" 0 0 ${-ll/2} " rpy="0 0 0"/>
+			<geometry>
+			<cylinder length="${ll}" radius="${width_lleg}" />
+			</geometry>
+		</visual>
+	</link>
+<!-- long vertical rod 2b -->
+	<joint name="elbow_to_lleg_1b" type="continuous">
+		<origin xyz="0.02 0 0" rpy="0 0 0"/>
+		<parent link="leg1_elbow"/>
+		<child link="lleg_1b"/>
+		<mimic joint="elbow_to_lleg_1a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+
+	<link name="lleg_1b">
+		<inertial>
+			<origin xyz="0 0 ${-ll/2} " rpy="0 0 0"/>
+			<mass value="${mass_lleg}"/>
+			<xacro:default_inertial3 mass="${mass_lleg}" width="${ll}" length="${ll}" />
+		</inertial>
+
+		<visual>
+			<origin xyz=" 0 0 ${-ll/2} " rpy="0 0 0"/>
+			<geometry>
+			<cylinder length="${ll}" radius="${width_lleg}" />
+			</geometry>
+		</visual>
+	</link>
+
+<!-- ********************************************************************** -->
+<!-- Vertical Connector with "upper_leg" 2                                  -->
+<!-- ********************************************************************** -->
+<!-- horizontal bar of connection between "upper_leg2" and "lower_leg2ab"   -->
+	<joint name="uleg_2_to_elbow" type="continuous">
+		<origin xyz="0 -${ul} 0" rpy="0.3178 0 0"/>
+		<parent link="uleg_2"/>
+		<child link="leg2_elbow"/>
+		<axis xyz="1 0 0"/>
+	</joint>
+
+	<link name="leg2_elbow">
+		<inertial>
+			<origin xyz="0 0 0 " rpy="0 ${PI/2} 0"/>
+			<mass value="${mass_con}"/>
+			<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0 " rpy="0 ${PI/2} 0"/>
+			<geometry>
+			<cylinder length="0.04" radius="0.002" />
+			</geometry> 
+		</visual>
+	</link>
+<!-- long vertical rod 2a -->
+	<joint name="elbow_to_lleg_2a" type="continuous">
+		<origin xyz="-0.02 0 0" rpy="0 0 0"/>
+		<parent link="leg2_elbow"/>
+		<child link="lleg_2a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+
+	<link name="lleg_2a">
+		<inertial>
+			<origin xyz="0 0 ${-ll/2} " rpy="0 0 0"/>
+			<mass value="${mass_lleg}"/>
+			<xacro:default_inertial3 mass="${mass_lleg}" width="${ll}" length="${width_lleg}" />
+		</inertial>
+		<visual>
+			<origin xyz=" 0 0 ${-ll/2} " rpy="0 0 0"/>
+			<geometry>
+			<cylinder length="${ll}" radius="${width_lleg}" />
+			</geometry>
+		</visual>
+	</link>
+<!-- long vertical rod 2b -->
+	<joint name="elbow_to_lleg_2b" type="continuous">
+		<origin xyz="0.02 0 0" rpy="0 0 0"/>
+		<parent link="leg2_elbow"/>
+		<child link="lleg_2b"/>
+		<mimic joint="elbow_to_lleg_2a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+
+	<link name="lleg_2b">
+		<inertial>
+			<origin xyz="0 0 ${-ll/2} " rpy="0 0 0"/>
+			<mass value="${mass_lleg}"/>
+			<xacro:default_inertial3 mass="${mass_lleg}" width="${ll}" length="${ll}" />
+		</inertial>
+
+		<visual>
+			<origin xyz=" 0 0 ${-ll/2} " rpy="0 0 0"/>
+			<geometry>
+			<cylinder length="${ll}" radius="${width_lleg}" />
+			</geometry>
+		</visual>
+	</link>
+
+<!-- ********************************************************************** -->
+<!-- Vertical Connector with "upper_leg" 3                                  -->
+<!-- ********************************************************************** -->
+<!-- horizontal bar of connection between "upper_leg3" and "lower_leg3ab"   -->
+	<joint name="uleg_3_to_elbow" type="continuous">
+		<origin xyz="0 -${ul} 0" rpy="0.3178 0 0"/>
+		<parent link="uleg_3"/>
+		<child link="leg3_elbow"/>
+		<axis xyz="1 0 0"/>
+	</joint>
+
+	<link name="leg3_elbow">
+		<inertial>
+			<origin xyz="0 0 0 " rpy="0 ${PI/2} 0"/>
+			<mass value="${mass_con}"/>
+			<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0 " rpy="0 ${PI/2} 0"/>
+			<geometry>
+			<cylinder length="0.04" radius="0.002" />
+			</geometry> 
+		</visual>
+	</link>
+<!-- long vertical rod 3a -->
+	<joint name="elbow_to_lleg_3a" type="continuous">
+		<origin xyz="-0.02 0 0" rpy="0 0 0"/>
+		<parent link="leg3_elbow"/>
+		<child link="lleg_3a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+
+	<link name="lleg_3a">
+		<inertial>
+			<origin xyz="0 0 ${-ll/2} " rpy="0 0 0"/>
+			<mass value="${mass_lleg}"/>
+			<xacro:default_inertial3 mass="${mass_lleg}" width="${ll}" length="${width_lleg}" />
+		</inertial>
+		<visual>
+			<origin xyz=" 0 0 ${-ll/2} " rpy="0 0 0"/>
+			<geometry>
+			<cylinder length="${ll}" radius="${width_lleg}" />
+			</geometry>
+		</visual>
+	</link>
+<!-- long vertical rod 3b -->
+	<joint name="elbow_to_lleg_3b" type="continuous">
+		<origin xyz="0.02 0 0" rpy="0 0 0"/>
+		<parent link="leg3_elbow"/>
+		<child link="lleg_3b"/>
+		<mimic joint="elbow_to_lleg_3a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+
+	<link name="lleg_3b">
+		<inertial>
+			<origin xyz="0 0 ${-ll/2} " rpy="0 0 0"/>
+			<mass value="${mass_lleg}"/>
+			<xacro:default_inertial3 mass="${mass_lleg}" width="${ll}" length="${ll}" />
+		</inertial>
+
+		<visual>
+			<origin xyz=" 0 0 ${-ll/2} " rpy="0 0 0"/>
+			<geometry>
+			<cylinder length="${ll}" radius="${width_lleg}" />
+			</geometry>
+		</visual>
+	</link>
 	
 <!-- ****************************************************************** -->
-<!-- Vertical Connector with "upper_leg" 1 -->
+<!-- Horizontal bars under the legs                                     -->
 <!-- ****************************************************************** -->
-<!-- horizontal bar of connection between "upper_leg" and the long leg 1-->
-      <joint name="uleg1_con" type="continuous">
-    	   <origin xyz="0 -0.2 0" rpy="${PI/2-1.0358} 0 0"/>
-    	   <parent link="uleg_1"/>
-    	   <child link="con1"/>
-         <axis xyz="1 0 0"/>
-      </joint>
+<!-- bottom horizontal bar of union between "upper_leg" and lleg 3      -->
+	<joint name="con33_lleg_3" type="continuous">
+        	<origin xyz="0 0 -0.15" rpy="0 0 0"/>
+        	<parent link="lleg_3b"/>
+        	<child link="con33"/>
+		<axis xyz="0 1 0"/>
+	</joint>
 
-      <link name="con1">
-        <inertial>
-          <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-          <mass value="${mass_con}"/>
-         	<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-        </inertial>
-        <visual>
-          <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-          <geometry>
-            <cylinder length="0.05" radius="0.002" />
-          </geometry>
-        </visual>
-        <collision>
-       	  <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0 "/>
-          <geometry>
-            <cylinder length="0.05" radius="0.002" />
-          </geometry>
-        </collision>
-       </link>
-<!-- long vertical rod 1 -->
-       <joint name="con_lleg_1" type="continuous">
-         <origin xyz="-0.02 0 0" rpy="0 0 0"/>
-       	 <parent link="con1"/>
-       	 <child link="lleg_1"/>
-         <axis xyz="0 1 0"/>
-       </joint>
+	<link name="con33">
+		<inertial>
+			<origin xyz="-0.02  0 0 " rpy="0 ${PI/2} 0"/>
+			<mass value="${mass_con}"/>
+			<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
+        	</inertial>
 
-       <link name="lleg_1">
-         <inertial>
-           <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-           <mass value="${mass_lleg}"/>
-        	 <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-         </inertial>
-         <visual>
-           <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-           <geometry>
-             <cylinder length="${length_lleg}" radius="${width_lleg}" />
-           </geometry>
-         </visual>
-         <collision>
-        	<origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-             <geometry>
-                 <cylinder length="${length_lleg}" radius="${width_lleg}" />
-             </geometry>
-           </collision>
-       </link>
-<!-- long vertical rod 2 -->
-       <joint name="con2_lleg_1" type="continuous">
-         <origin xyz="0.03 0 0" rpy="0 0 0"/>
-       	 <parent link="con1"/>
-       	 <child link="lleg_12"/>
-       	 <mimic joint="con_lleg_1"/>
-        <axis xyz="0 1 0"/>
-      </joint>
+        	<visual>
+        		<origin xyz="-0.02 0 0  " rpy="0 ${PI/2} 0"/>
+        		<geometry>
+        		<cylinder length="0.04" radius="0.002" />
+        		</geometry>
+           	</visual>
+	</link>
 
-       <link name="lleg_12">
-         <inertial>
-           <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-           <mass value="${mass_lleg}"/>
-        	 <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-          </inertial>
+<!-- horizontal bar below union between "upper_leg" and long leg 2-->
+	<joint name="con22_lleg_2" type="continuous">
+        	<origin xyz="0 0 -0.15" rpy="0 0 0"/>
+        	<parent link="lleg_2b"/>
+        	<child link="con23"/>
+		<axis xyz="0 1 0"/>
+	</joint>
 
-          <visual>
-             <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-             <geometry>
-                 <cylinder length="${length_lleg}" radius="${width_lleg}" />
-             </geometry>
-          </visual>
-          <collision>
-        	   <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-              <geometry>
-                <cylinder length="${length_lleg}" radius="${width_lleg}" />
-              </geometry>
-          </collision>
-        </link>
-<!-- ****************************************************************** -->
-<!-- Brazo vertical de union con "upper_leg" 2 -->
-<!-- ****************************************************************** -->
-<!-- barilla horizontal de uninon entre "upper_leg" y la pata larga 2-->
-        <joint name="uleg2_con" type="continuous">
-          <origin xyz="0 -0.2 0" rpy="${PI/2-1.0358} 0 0"/>
-          <parent link="uleg_2"/>
-          <child link="con2"/>
-          <axis xyz="1 0 0"/>
-        </joint>
+	<link name="con23">
+		<inertial>
+			<origin xyz="-0.02  0 0 " rpy="0 ${PI/2} 0"/>
+			<mass value="${mass_con}"/>
+			<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
+        	</inertial>
 
-        <link name="con2">
-          <inertial>
-            <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-            <mass value="${mass_con}"/>
-           	<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-          </inertial>
+        	<visual>
+        		<origin xyz="-0.02 0 0  " rpy="0 ${PI/2} 0"/>
+        		<geometry>
+        		<cylinder length="0.04" radius="0.002" />
+        		</geometry>
+           	</visual>
+	</link>
 
-          <visual>
-            <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-            <geometry>
-                <cylinder length="0.05" radius="0.002" />
-            </geometry>
-          </visual>
-          <collision>
-         	  <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0 "/>
-              <geometry>
-                  <cylinder length="0.05" radius="0.002" />
-              </geometry>
-          </collision>
-         </link>
-<!-- barilla vertical larga 1 -->
-         <joint name="con_lleg_2" type="continuous">
-           <origin xyz="-0.02 0 0" rpy="0 0 0"/>
-         	 <parent link="con2"/>
-         	 <child link="lleg_2"/>
-           <axis xyz="0 1 0"/>
-         </joint>
+<!-- bottom horizontal bar of union between "upper_leg" and long leg 1-->
+	<joint name="con11_lleg_1" type="continuous">
+        	<origin xyz="0 0 -0.15" rpy="-0.8398 0 0"/>
+        	<parent link="lleg_1b"/>
+        	<child link="con13"/>
+		<axis xyz="0 1 0"/>
+	</joint>
 
-         <link name="lleg_2">
-           <inertial>
-            <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-            <mass value="${mass_lleg}"/>
-          	<xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-           </inertial>
+	<link name="con13">
+		<inertial>
+			<origin xyz="-0.02  0 0 " rpy="0 ${PI/2} 0"/>
+			<mass value="${mass_con}"/>
+			<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
+        	</inertial>
 
-           <visual>
-             <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-             <geometry>
-                 <cylinder length="${length_lleg}" radius="${width_lleg}" />
-             </geometry>
-           </visual>
-           <collision>
-             <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-             <geometry>
-                 <cylinder length="${length_lleg}" radius="${width_lleg}" />
-             </geometry>
-           </collision>
-          </link>
-<!-- barilla vertical larga 2 -->
-          <joint name="con2_lleg_2" type="continuous">
-            <origin xyz="0.03 0 0" rpy="0 0 0"/>
-            <parent link="con2"/>
-            <child link="lleg_22"/>
-            <axis xyz="0 1 0"/>
-          </joint>
-
-          <link name="lleg_22">
-            <inertial>
-                <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-                <mass value="${mass_lleg}"/>
-           	    <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-            </inertial>
-
-            <visual>
-                <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-                <geometry>
-                    <cylinder length="${length_lleg}" radius="${width_lleg}" />
-                </geometry>
-            </visual>
-            <collision>
-           	  <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-                <geometry>
-                    <cylinder length="${length_lleg}" radius="${width_lleg}" />
-                </geometry>
-            </collision>
-           </link>
- <!-- ****************************************************************** -->
- <!-- Brazo vertical de union con "upper_leg" 3 -->
- <!-- ****************************************************************** -->
- <!-- barilla horizontal de uninon entre "upper_leg" y la pata larga 3-->
-         <joint name="uleg3_con" type="continuous">
-           <origin xyz="0 -0.2 0" rpy="${PI/2-1.0358} 0 0"/>
-           <parent link="uleg_3"/>
-           <child link="con3"/>
-           <axis xyz="1 0 0"/>
-         </joint>
-
-         <link name="con3">
-           <inertial>
-             <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-             <mass value="${mass_con}"/>
-        	    <xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-           </inertial>
-
-          <visual>
-             <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-             <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-             </geometry>
-          </visual>
-          <collision>
-          	<origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0 "/>
-             <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-             </geometry>
-          </collision>
-        </link>
-
-<!-- barilla vertical larga 1 -->
-        <joint name="con_lleg_3" type="continuous">
-          <origin xyz="-0.02 0 0" rpy="0 0 0"/>
-          <parent link="con3"/>
-          <child link="lleg_3"/>
-          <axis xyz="0 1 0"/>
-        </joint>
-
-        <link name="lleg_3">
-          <inertial>
-            <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-            <mass value="${mass_lleg}"/>
-            <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-          </inertial>
-
-          <visual>
-            <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-            <geometry>
-                <cylinder length="${length_lleg}" radius="0.002" />
-            </geometry>
-          </visual>
-          <collision>
-            <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-            <geometry>
-                <cylinder length="${length_lleg}" radius="0.002" />
-            </geometry>
-          </collision>
-         </link>
-
-<!-- barilla vertical larga 1 -->
-        <joint name="con2_lleg_3" type="continuous">
-          <origin xyz="0.03 0 0" rpy="0 0 0"/>
-          <parent link="con3"/>
-          <child link="lleg_32"/>
-          <axis xyz="0 1 0"/>
-        </joint>
-
-        <link name="lleg_32">
-          <inertial>
-              <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-              <mass value="${mass_lleg}"/>
-              <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-          </inertial>
-
-          <visual>
-            <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-            <geometry>
-                <cylinder length="${length_lleg}" radius="${width_lleg}" />
-            </geometry>
-          </visual>
-          <collision>
-            <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-            <geometry>
-                <cylinder length="${length_lleg}" radius="${width_lleg}" />
-            </geometry>
-          </collision>
-         </link>
+        	<visual>
+        		<origin xyz="-0.02 0 0  " rpy="0 ${PI/2} 0"/>
+        		<geometry>
+        		<cylinder length="0.04" radius="0.002" />
+        		</geometry>
+           	</visual>
+	</link>
 
 <!-- ****************************************************************** -->
-<!-- Barillas horizontales de abajo de las patas -->
+<!-- Lower union of the legs with the end effector                      -->
 <!-- ****************************************************************** -->
-<!-- barilla horizontal de abajo de uninon entre "upper_leg" y la pata larga 3-->
-         <joint name="con33_lleg_3" type="continuous">
-           <origin xyz="0 0 -0.51" rpy="0 0 0"/>
-         	 <parent link="lleg_32"/>
-         	 <child link="con33"/>
-           <axis xyz="0 1 0"/>
-         </joint>
-
-         <link name="con33">
-           <inertial>
-             <origin xyz="-0.025  0 0 " rpy="0 ${PI/2} 0"/>
-             <mass value="${mass_con}"/>
-        	   <xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-          </inertial>
-
-           <visual>
-             <origin xyz="-0.025 0 0  " rpy="0 ${PI/2} 0"/>
-             <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-             </geometry>
-           </visual>
-           <collision>
-        	    <origin xyz="-0.025 0  0 " rpy="0 ${PI/2} 0 "/>
-              <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-               </geometry>
-           </collision>
-          </link>
-
-<!-- barilla horizontal de abajo de uninon entre "upper_leg" y la pata larga 2-->
-          <joint name="con23_lleg_2" type="continuous">
-            <origin xyz="0 0 -0.51" rpy="0 0 0"/>
-            <parent link="lleg_22"/>
-            <child link="con23"/>
-            <axis xyz="0 1 0"/>
-          </joint>
-
-          <link name="con23">
-            <inertial>
-              <origin xyz="-0.025  0 0 " rpy="0 ${PI/2} 0"/>
-              <mass value="${mass_con}"/>
-           	  <xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-            </inertial>
-
-            <visual>
-              <origin xyz="-0.025 0 0  " rpy="0 ${PI/2} 0"/>
-              <geometry>
-                  <cylinder length="0.05" radius="0.002" />
-              </geometry>
-            </visual>
-            <collision>
-         	    <origin xyz="-0.025 0  0 " rpy="0 ${PI/2} 0 "/>
-              <geometry>
-                  <cylinder length="0.05" radius="0.002" />
-              </geometry>
-            </collision>
-         </link>
-
-<!-- barilla horizontal de abajo de uninon entre "upper_leg" y la pata larga 1-->
-         <joint name="con13_lleg_1" type="continuous">
-           <origin xyz="0 0 -0.51" rpy="0 0 0"/>
-           <parent link="lleg_12"/>
-           <child link="con13"/>
-           <axis xyz="0 1 0"/>
-         </joint>
-
-         <link name="con13">
-           <inertial>
-             <origin xyz="-0.025  0 0 " rpy="0 ${PI/2} 0"/>
-             <mass value="${mass_con}"/>
-        	   <xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-           </inertial>
-
-           <visual>
-             <origin xyz="-0.025 0 0  " rpy="0 ${PI/2} 0"/>
-             <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-             </geometry>
-           </visual>
-           <collision>
-        	    <origin xyz="-0.025 0  0 " rpy="0 ${PI/2} 0 "/>
-              <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-               </geometry>
-           </collision>
-        </link>
-
-
-<!-- ****************************************************************** -->
-<!-- Union inferior de las patas con el end effector -->
-<!-- ****************************************************************** -->
-<!-- Union de la pata larga 1-->
+<!-- Long leg joint 1							-->
         <joint name='lleg1_base' type='continuous'>
-          <origin xyz=" 0 0 0" rpy="-0.5 0 0"/>
+          <origin xyz="-0.02 0.05 0" rpy="0 0 0"/>
           <parent link="con13"/>
           <child link="low_base"/>
           <axis xyz="1 0 0"/>
         </joint>
 
         <link name='low_base'>
-          <inertial>
-            <origin xyz="${-length_m} ${length_m} 0" rpy="0 -0 0"/>
-            <mass value="${mass_low_base}"/>
-           	<xacro:default_inertial3 mass="${mass_low_base}" width="${length_m}" length="${length_m}" />
-          </inertial>
+        		<inertial>
+			<origin xyz="-0.02  0 0 " rpy="0 ${PI/2} 0"/>
+			<mass value="${mass_con}"/>
+			<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
+        	</inertial>
           <visual name='low_base_visual'>
-            <origin xyz="-0.07 -0.015 -0.012" rpy="0 -0 0"/>
+            <origin xyz="0 0 -0.0025" rpy="0 0 1.0472"/>
     	      <geometry>
               <mesh filename="package://delta_robot_support/urdf/meshes/EE.stl" scale="0.001 0.001 0.001" />
             </geometry>
           </visual>
         </link>
-
-<!-- ****************************************************************** -->
+        <!-- ****************************************************************** -->
 <!-- Joins entre las uniones inferiores de end effector  -->
 <!-- ****************************************************************** -->
 <!-- join union del end effector y la barilla 1 de la patas largas 1 y 2-->
-        <gazebo>
-          <joint name='lleg2_base' type='revolute'>
-            <child>con23</child>
-            <parent>low_base</parent>
-      	    <pose> 0 0 0 0 0 0 </pose>
-            <axis>
-              <xyz>1 0 0</xyz>
-              <limit>
+	<gazebo>
+	<joint name='lleg2_base' type='revolute'>
+		<child>con23</child>
+		<parent>low_base</parent>
+		<pose> 0 0 0 0 0 0 </pose>
+		<axis>
+		<xyz>1 0 0</xyz>
+		<limit>
                 <lower>-100</lower>
                 <upper>100</upper>
               </limit>
@@ -637,7 +557,7 @@
           </joint>
 
 <!-- join union del end effector y la barilla 2 de la pata larga  1-->
-          <joint name='con13_lleg_12' type='revolute'>
+          <joint name='con13_lleg_1b' type='revolute'>
             <child>con13</child>
             <parent>lleg_1</parent>
             <pose> -0.05 0 0 0 0 0 </pose>
@@ -658,7 +578,7 @@
           </joint>
 
 <!-- join union del end effector y la barilla 2 de la pata larga  2-->
-          <joint name='con23_lleg_22' type='revolute'>
+          <joint name='con23_lleg_2b' type='revolute'>
             <child>con23</child>
             <parent>lleg_2</parent>
             <pose> -0.05 0 0 0 0 0 </pose>
@@ -679,7 +599,7 @@
           </joint>
 
 <!-- join union del end effector y la barilla 2 de la pata larga  3-->
-          <joint name='con33_lleg_32' type='revolute'>
+          <joint name='con33_lleg_3b' type='revolute'>
             <child>con33</child>
             <parent>lleg_3</parent>
             <pose> -0.05 0 0 0 0 0 </pose>
@@ -699,7 +619,6 @@
             </axis>
           </joint>
         </gazebo>
-
 <!-- ****************************************************************** -->
 <!-- Joins trabsmisions motors for gazebo  -->
 <!-- ****************************************************************** -->
