@@ -1,4 +1,8 @@
 gazebo_ros_control:
   pid_gains:
-    link_0_JOINT1:
+    hip_1:
+      p: 1
+    hip_2:
+      p: 1
+    hip_3:
       p: 1
