@@ -52,9 +52,9 @@ int calc_step_angle(int current_pos, float desired){
   else{
     current_pos=int(desired);
   }
-  //char result[8]; // Buffer big enough for 7-character float
-  //dtostrf(current_pos, 6, 2, result); // Leave room for too large numbers!
-  //node_handle.loginfo(result);
+  char result[8]; // Buffer big enough for 7-character float
+  dtostrf(current_pos, 6, 2, result); // Leave room for too large numbers!
+  node_handle.loginfo(result);
   return current_pos;
 }
 
