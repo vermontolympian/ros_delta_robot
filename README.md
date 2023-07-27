@@ -22,8 +22,9 @@ catkin_make
 ```
 roslaunch delta_robot_support delta_robot_sim.launch
 ```
-7. In a seperate terminal, run the following command to control the joints. Replace 0,0,0 with the 3 joint angles that you want the robot to move to. The origin of the joint angles is 30   degrees above the horizon. The values sent in this command are in radians. 
+7. In a seperate terminal, source /opt/ros/noetic/setup.bash again thenrun the following command to control the joints. Replace 0,0,0 with the 3 joint angles that you want the robot to move to. The origin of the joint angles is 30   degrees above the horizon. The values sent in this command are in radians. 
 ```
+source /opt/ros/noetic/setup.bash
 rostopic pub -1 /arms_joint_state_controller/command std_msgs/Float64MultiArray "{data:[0,0,0],layout: {dim:[], data_offset: 1"}}
 ```
 
