@@ -1,10 +1,19 @@
 To run the simulation
 1. Add the files to the source folder of a catkin workspace. 
   Note: This project was developed using ros noetic.
-2. Run catkin_make to build the packages
-3. Run the command roslaunch delta_robot_support delta_robot_sim.launch
-4. In a seperate terminal, run the command rostopic pub -1 /arms_joint_state_controller/command std_msgs/Float64MultiArray "{data:[0,0,0],layout: {dim:[], data_offset: 1"}}
-  Replace 0,0,0 with the 3 joint angles that you want the robot to move to. The origin of the joint angles is 30   degrees above the horizon. The values sent in this command are in radians. 
+2. Build the packages
+```
+catkin_make
+```
+3. Launch the simulation
+```
+roslaunch delta_robot_support delta_robot_sim.launch
+```
+4. In a seperate terminal, run the following command to control the joints. Replace 0,0,0 with the 3 joint angles that you want the robot to move to. The origin of the joint angles is 30   degrees above the horizon. The values sent in this command are in radians. 
+```
+rostopic pub -1 /arms_joint_state_controller/command std_msgs/Float64MultiArray "{data:[0,0,0],layout: {dim:[], data_offset: 1"}}
+```
+
 
 
 
