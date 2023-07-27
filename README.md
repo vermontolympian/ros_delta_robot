@@ -41,12 +41,16 @@ Follow direction to set up all the ports
 ```
 sudo apt-get install arduino arduino-core ros-noetic-rosserial ros-noetic-rosserial-arduino
 ```
-3. add test ardiuno libraries
+3. Start roscore
+```
+roscore
+```
+4. In a seperate terminal, add test ardiuno libraries
 ```
 cd ~/snap/ardiuno/85/Ardiuno/libraries/
 rosrun rosserial_arduino make_libraries.py .
 ```
-4. launch rosnode for ardiuno
+5. launch rosnode for ardiuno
 ```
 rosrun rosserial_python serial_node.py _port:=/dev/ttyACM0
 ```
