@@ -12,8 +12,8 @@ find_package(catkin REQUIRED
   joint_state_controller
   roscpp
   urdf
-  rosserial_arduino
-  rosserial_client
+  #rosserial_arduino
+ # rosserial_client
   std_msgs)
 
 catkin_package(
