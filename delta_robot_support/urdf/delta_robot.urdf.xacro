@@ -1,718 +1,675 @@
 <?xml version="1.0"?>
+<!--rostopic pub -1 /arms_joint_state_controller/command std_msgs/Float64MultiArray "{data:[0,1,-1],layout: {dim:[], data_offset: 1"}}-->
 <robot name="delta_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:property name="PI" value="3.1415926535897931"/>
-  <xacro:property name="width" value="0.01" /> <!-- all links -->
+  	<xacro:property name="namespace"    	value="delta_robot" />
+	
+	<xacro:property name="PI"           	value="3.14159265358"/>
+	<xacro:property name="cosThirty"    	value="0.86602540378"/>
+	<xacro:property name="sinThirty"    	value="0.50000000000"/>
+	<xacro:property name="DegToRad"     	value="0.01745329251"/>
 
+	<xacro:property name="servo_max_force"  value="30"/>				<!-- Max force in N*ms of servos-->
+	<xacro:property name="servo_max_speed"  value="0.5"/>				<!-- Max angular velocity in rad/s of servos-->
+	<xacro:property name="servo_max_angle"  value="135"/>				<!-- Max angle from origin in degrees of servos-->
+	<xacro:property name="servo_min_angle"  value="-135"/>				<!-- Min angle from origin in degrees of servos-->
 
-  <xacro:property name="width_m" value="0.01" /> <!-- all links -->
-  <xacro:property name="length_m" value="0.03" /> <!-- all links -->
+	<xacro:property name="hip_angle"    	value="120.00000000000"/>	<!-- Starting angle of hip joints which becomes the origin during operation-->
+	<xacro:property name="knee_angle"   	value="109.23115703305"/>	<!-- Starting angle of knee joints-->
+	<xacro:property name="ankle_angle"  	value="130.76884296694"/>	<!-- Starting angle of ankle joints-->
 
-  <xacro:property name="distance_ground" value="2" /> <!-- distance from ground if there is not a uav-->
-  <xacro:property name="distance_arm_uav" value="0.12" /> <!-- distance arm from uav-->
-  <xacro:property name="mass_base" value="0.48" /> <!-- base mass-->
-  <xacro:property name="mass_low_base" value="0.03" /> <!-- low base mass -->
-  <xacro:property name="length_base" value="0.3" /> <!-- base length -->
-  <xacro:property name="mass_uleg" value="0.0466" /> <!--upper leg mass-->
-  <xacro:property name="length_uleg" value="0.2" /> <!-- upper leg length -->
-  <xacro:property name="width_uleg" value="0.05" /> <!-- upper leg width -->
+  	<xacro:property name="base_radius"  	value="0.075" /> 			<!-- Radius between center of base and hip joint in m-->
+	<xacro:property name="base_height"  	value="0.300" /> 			<!-- Z height of base with respect to ground in m-->
+	
+	<xacro:property name="femur_x"      	value="0.040" /> 			<!-- Width in x direction of upper leg in m-->
+	<xacro:property name="femur_y"      	value="0.020" /> 			<!-- Width in y direction of upper leg in m-->
+	<xacro:property name="femur_z"      	value="0.100" /> 			<!-- Length of upper leg in m-->
+	<xacro:property name="femur_mass"   	value="0.049" /> 			<!-- Mass of upper leg in kg-->
+	
+	<xacro:property name="tibia_x"      	value="0.009" /> 			<!-- Width in x direction of lower leg in m-->
+	<xacro:property name="tibia_y"      	value="0.009" /> 			<!-- Width in y direction of lower leg in m-->
+	<xacro:property name="tibia_z"      	value="0.150" /> 			<!-- Length of lower leg in m-->
+	<xacro:property name="tibia_mass"  		value="0.007" /> 			<!-- Mass of lower leg in kg-->
+	
+	<xacro:property name="ee_radius"    	value="0.048" /> 			<!-- Radius between center of ee and ankle joint in m-->
+	<xacro:property name="ee_z"      		value="0.006" /> 			<!-- Height of ee in m-->
+	<xacro:property name="ee_mass"      	value="0.048" /> 			<!-- Mass of ee in kg-->
+	
+	<xacro:property name="ankle_mass"   	value="0.005" /> 			<!-- Mass of each ball stud used in ankle joint in kg-->
+	<xacro:property name="ankle_radius" 	value="0.002" /> 			<!-- Radius of ankle joint in m-->
+	<xacro:property name="ankle_x"  		value="0.040" /> 			<!-- Width of ankle joint in m-->
 
-  <xacro:property name="mass_lleg" value="0.04" /> <!-- low leg mass-->
-  <xacro:property name="length_lleg" value="0.51" /> <!-- low leg length-->
-  <xacro:property name="width_lleg" value="0.002" /> <!-- low leg width -->
-  <xacro:property name="mass_con" value="0.0173" /> <!-- connector mass-->
+	<xacro:property name="knee_mass"    	value="0.005" /> 			<!-- Mass of each ball stud used in knee joint in kg-->
+	<xacro:property name="knee_radius"  	value="0.002" /> 			<!-- Radius of knee joint in m-->
+	<xacro:property name="knee_x"   		value="0.040" /> 			<!-- Width of knee joint in m-->
+  
+	<xacro:macro name="inertia_rectangular" params="mass x y z">
+		<inertia ixx="${1/12*mass*(y*y+z*z)}" iyz="0.0"
+				 iyy="${1/12*mass*(x*x+z*z)}" ixz="0.0"
+		    	 izz="${1/12*mass*(x*x+y*y)}" ixy="0.0"/>
+	</xacro:macro>
 
-  <xacro:property name="namespace" value="delta_robot" />
+	<gazebo>
+		<plugin name="my_plugin" filename="libcontact.so"/>
+		<plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">
+		<robotNamespace>/${namespace}</robotNamespace>
+     	</plugin>
+		<self_collide>true</self_collide>
+		<enable_wind>false</enable_wind>
+  	</gazebo>
 
-  <xacro:macro name="default_inertial2" params="mass length width">
-	 <inertia ixx="${1/12*mass*(width*width+length*length)}" ixy="0.0" ixz="0.0"
-	  	  iyy="${1/12*mass*(width*width+length*length)}" iyz="0.0"
-	 	  izz="${1/12*mass*(width*width+width*width)}"/>
-  </xacro:macro>
-  <xacro:macro name="default_inertial3" params="mass length width">
-	 <inertia ixx="${1/12*mass*(width*width+length*length)}" ixy="0.0" ixz="0.0"
-	  	  iyy="${1/12*mass*(width*width+length*length)}" iyz="0.0"
-	 	  izz="${1/12*mass*(length*length+length*length)}"/>
-  </xacro:macro>
+	<link name="world"/>
+	
+<!-- Visual Materials -->	
+	<gazebo reference="base">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-  <gazebo>
-     <plugin name="my_plugin" filename="libcontact.so"/>
-     <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">
-       <robotNamespace>/${namespace}</robotNamespace>
-     </plugin>
- 	   <self_collide>true</self_collide>
-     <enable_wind>false</enable_wind>
-   </gazebo>
+	<gazebo reference="femur_1">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-   <link name="world"/>
+	<gazebo reference="femur_2">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-<!-- Base superior -->
-   <joint name="base" type="fixed">
- 	     <parent link="world"/>
- 	     <child link="link_0"/>
-       <axis xyz="0 0 0"/>
-       <origin xyz="0 0 ${-distance_arm_uav+distance_ground}" rpy="0 0 1.57"/>
-   </joint>
-   <gazebo reference="link_w_JOINT_w2">
- 	    <physics>
-   		 <ode>
-   	    <provide_feedback>true</provide_feedback>
-   		 </ode>
- 	    </physics>
- 	 </gazebo>
+	<gazebo reference="femur_3">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-   <link name="link_0">
-      <inertial>
-        <origin xyz="-0.0 -0.0 -0.0" rpy="0 0 0"/>
-        <mass value="${mass_base}"/>
-        <xacro:default_inertial3 mass="${mass_base}" length="${length_base}" width="${width_m}" />
-      </inertial>
-      <visual>
-        <origin xyz="-0.147 -0.085 -0.01" rpy="0 0 0"/>
-   	    <geometry>
-          <mesh filename="package://delta_robot_support/urdf/meshes/fixed_base2.dae" scale="0.001 0.001 0.001" />
-        </geometry>
-      </visual>
-      <visual>
-        <origin xyz="-0.0 0 ${distance_arm_uav/2}" rpy="0 0 0"/>
-        <geometry>
-   	      <box size="0.05 0.05 ${distance_arm_uav}  "/>
+	<gazebo reference="tibia_1a">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-        </geometry>
-      </visual>
-      <collision>
-        <origin xyz="-0.147 -0.085 -0.01" rpy="0 0 0"/>
-        <geometry>
-            <mesh filename="package://delta_robot_support/urdf/meshes/fixed_base2.dae" scale="0.001 0.001 0.001" />
-        </geometry>
-      </collision>
-    </link>
+	<gazebo reference="tibia_1b">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-    <gazebo reference="link_0">
-      <visual>
-        <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
-          </script>
-        </material>
-      </visual>
-    </gazebo>
+	<gazebo reference="tibia_2a">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-    <gazebo reference="uleg_1">
-      <visual>
-        <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
-          </script>
-        </material>
-      </visual>
-    </gazebo>
+	<gazebo reference="tibia_2b">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-    <gazebo reference="uleg_2">
-      <visual>
-        <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
-          </script>
-        </material>
-      </visual>
-    </gazebo>
+	<gazebo reference="tibia_3a">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
 
-    <gazebo reference="uleg_3">
-      <visual>
-        <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
-          </script>
-        </material>
-      </visual>
-    </gazebo>
+	<gazebo reference="tibia_3b">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>
+   
+	<gazebo reference="ee">
+		<visual><material><script>
+			<uri>file://media/materials/scripts/gazebo.material</uri>
+			<name>Gazebo/DarkGrey</name>
+		</script></material></visual>
+	</gazebo>	
 
-    <gazebo reference="low_base">
-      <visual>
-        <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Red</name>
-          </script>
-        </material>
-      </visual>
-    </gazebo>
-<!-- Patas unidas a los motors -->
-    <joint name="link_0_JOINT_1" type="revolute">
-      <origin xyz="0 -${1.717/6*length_base} 0" rpy="0 0 0"/>
-    	<parent link="link_0"/>
-    	<child link="uleg_1"/>
-      <limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
-      <axis xyz="1 0 0"/>
-    </joint>
+<!-- Fixed Base -->
+	<joint name="base_joint" type="fixed">
+	  	<origin xyz="0 0 ${base_height}" rpy="0 0 0"/>
+	 	<parent link="world"/>
+	 	<child link="base"/>
+	</joint>
+	<link name="base">
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="1"/>
+			<inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Base_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Base_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
+<!-- ********************************************************************** -->
+<!-- Hips							                                        -->
+<!-- ********************************************************************** -->
+	<joint name="hip_1" type="revolute">
+		<origin xyz="0 -${base_radius} 0" rpy="${hip_angle*DegToRad} 0 0"/>
+		<parent link="base"/>
+		<child link="femur_1"/>
+		<limit effort="${servo_max_force}" velocity="${servo_max_speed}" upper="${hip_angle+servo_max_angle}" lower="${hip_angle+servo_min_angle}"/>
+		<axis xyz="1 0 0"/>
+		<dynamics damping="0.1"/>
+	</joint>
 
-    <joint name="link_0_JOINT_2" type="revolute">
-      <origin xyz="${-length_base/4} ${1.717/4*length_base-1.717/6*length_base+0.005} 0" rpy="0 0 ${4*PI/3}"/>
-    	<parent link="link_0"/>
-    	<child link="uleg_2"/>
-      <limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
-      <axis xyz="1 0 0"/>
-    </joint>
+	<joint name="hip_2" type="revolute">
+		<origin xyz="${base_radius*cosThirty} ${base_radius*sinThirty} 0" rpy="${hip_angle*DegToRad} 0 ${120*DegToRad}"/>
+		<parent link="base"/>
+		<child link="femur_2"/>
+		<limit effort="${servo_max_force}" velocity="${servo_max_speed}" upper="${hip_angle+servo_max_angle}" lower="${hip_angle+servo_min_angle}"/>
+		<axis xyz="1 0 0"/>
+		<dynamics damping="0.1"/>
+	</joint>
 
-    <joint name="link_0_JOINT_3" type="revolute">
-      <origin xyz="${length_base/4} ${1.717/4*length_base-1.717/6*length_base} 0" rpy="0 0 ${2*PI/3}"/>
-    	<parent link="link_0"/>
-    	<child link="uleg_3"/>
-      <limit effort="20" velocity="1.0" lower="-2.1" upper="2.1" />
-      <axis xyz="1 0 0"/>
-    </joint>
+	<joint name="hip_3" type="revolute">
+		<origin xyz="-${base_radius*cosThirty} ${base_radius*sinThirty} 0" rpy="${hip_angle*DegToRad} 0 ${240*DegToRad}"/>
+		<parent link="base"/>
+		<child link="femur_3"/>
+		<limit effort="${servo_max_force}" velocity="${servo_max_speed}" upper="${hip_angle+servo_max_angle}" lower="${hip_angle+servo_min_angle}"/>
+		<axis xyz="1 0 0"/>
+		<dynamics damping="0.1"/>
+	</joint>
+<!-- ********************************************************************** -->
+<!-- Femurs							                                        -->
+<!-- ********************************************************************** -->
+	<link name="femur_1">
+		<inertial>
+			<origin xyz="0 0 ${femur_z/2}" rpy="0 0 0"/>
+			<mass value="${femur_mass}"/>
+			<xacro:inertia_rectangular mass="${femur_mass}" x="${femur_x}" y="${femur_y}" z="${femur_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Femur_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Femur_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
 
-    <link name="uleg_1">
-      <inertial>
-        <origin xyz="0 ${-length_uleg/2+width_uleg/2+0.004}  0 " rpy="${PI/2} 0 0"/>
-        <mass value="${mass_uleg}"/>
-       	<xacro:default_inertial3 mass="${mass_uleg}" width="${length_uleg}" length="${width_uleg}" />
-      </inertial>
-      <visual>
-        <origin xyz="0 ${width_uleg/2+0.004} ${width_uleg/2+0.003} " rpy="${PI/2} ${PI} ${PI/2}"/>
-      	<geometry>
-          <mesh filename="package://delta_robot_support/urdf/meshes/upper_leg.STL" scale="0.001 0.001 0.001" />
-        </geometry>
-      </visual>
-      <collision>
-     	  <origin xyz="0 ${width_uleg/2+0.004} ${width_uleg/2} " rpy="${PI/2} ${PI} ${PI/2}"/>
-    	  <geometry>
-          <mesh filename="package://delta_robot_support/urdf/meshes/upper_leg.STL" scale="0.001 0.001 0.001" />
-        </geometry>
-      </collision>
-     </link>
+	<link name="femur_2">
+		<inertial>
+			<origin xyz="0 0 ${femur_z/2}" rpy="0 0 0"/>
+			<mass value="${femur_mass}"/>
+			<xacro:inertia_rectangular mass="${femur_mass}" x="${femur_x}" y="${femur_y}" z="${femur_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Femur_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Femur_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
 
-     <link name="uleg_2">
-      <inertial>
-           <origin xyz="0 ${-length_uleg/2+width_uleg/2+0.004}  0 " rpy="${PI/2} 0 0"/>
-           <mass value="${mass_uleg}"/>
-    	      <xacro:default_inertial3 mass="${mass_uleg}" width="${length_uleg}" length="${width_uleg}" />
-       </inertial>
-       <visual>
-         <origin xyz="0 ${width_uleg/2+0.004} ${width_uleg/2+0.003} " rpy="${PI/2} ${PI} ${PI/2}"/>
-    	   <geometry>
-           <mesh filename="package://delta_robot_support/urdf/meshes/upper_leg.STL" scale="0.001 0.001 0.001" />
-         </geometry>
-       </visual>
-       <collision>
-  	      <origin xyz="0 ${width_uleg/2+0.004} ${width_uleg/2} " rpy="${PI/2} ${PI} ${PI/2}"/>
-  	      <geometry>
-             <mesh filename="package://delta_robot_support/urdf/meshes/upper_leg.STL" scale="0.001 0.001 0.001" />
-         </geometry>
-       </collision>
-     </link>
+	<link name="femur_3">
+		<inertial>
+			<origin xyz="0 0 ${femur_z/2}" rpy="0 0 0"/>
+			<mass value="${femur_mass}"/>
+			<xacro:inertia_rectangular mass="${femur_mass}" x="${femur_x}" y="${femur_y}" z="${femur_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Femur_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Femur_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
+<!-- ********************************************************************** -->
+<!-- Knees							                                        -->
+<!-- ********************************************************************** -->
+	<joint name="femur_1_to_knee_1" type="continuous">
+		<origin xyz="0 0 ${femur_z}" rpy="${knee_angle*DegToRad} 0 0"/>
+		<parent link="femur_1"/>
+		<child link="knee_1"/>
+		<axis xyz="1 0 0"/>
+	</joint>
+	<link name="knee_1">
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${2*knee_mass}"/>
+			<xacro:inertia_rectangular mass="${2*knee_mass}" x="${knee_x}" y="${knee_radius}" z="${knee_radius}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+			<geometry>
+			<cylinder length="${knee_x}" radius="${knee_radius}" />
+			</geometry> 
+		</visual>
+	</link>
+	
+	<joint name="femur_2_to_knee_2" type="continuous">
+		<origin xyz="0 0 ${femur_z}" rpy="${knee_angle*DegToRad}  0 0"/>
+		<parent link="femur_2"/>
+		<child link="knee_2"/>
+		<axis xyz="1 0 0"/>
+	</joint>
+	<link name="knee_2">
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${2*knee_mass}"/>
+			<xacro:inertia_rectangular mass="${2*knee_mass}" x="${knee_x}" y="${knee_radius}" z="${knee_radius}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+			<geometry>
+			<cylinder length="${knee_x}" radius="${knee_radius}" />
+			</geometry> 
+		</visual>
+	</link>
 
-     <link name="uleg_3">
-       <inertial>
-           <origin xyz="0 ${-length_uleg/2+width_uleg/2+0.004}  0 " rpy="${PI/2} 0 0"/>
-           <mass value="${mass_uleg}"/>
-           <xacro:default_inertial3 mass="${mass_uleg}" width="${length_uleg}" length="${width_uleg}" />
-       </inertial>
-       <visual>
-         <origin xyz="0 ${width_uleg/2+0.004} ${width_uleg/2+0.003} " rpy="${PI/2} ${PI} ${PI/2}"/>
-       	 <geometry>
-           <mesh filename="package://delta_robot_support/urdf/meshes/upper_leg.STL" scale="0.001 0.001 0.001" />
-         </geometry>
-       </visual>
-        <collision>
-          <origin xyz="0 ${width_uleg/2+0.004} ${width_uleg/2} " rpy="${PI/2} ${PI} ${PI/2}"/>
-       	  <geometry>
-            <mesh filename="package://delta_robot_support/urdf/meshes/upper_leg.STL" scale="0.001 0.001 0.001" />
-          </geometry>
-        </collision>
-      </link>
+	<joint name="femur_3_to_knee_3" type="continuous">
+		<origin xyz="0 0 ${femur_z}" rpy="${knee_angle*DegToRad}  0 0"/>
+		<parent link="femur_3"/>
+		<child link="knee_3"/>
+		<axis xyz="1 0 0"/>
+	</joint>
+	<link name="knee_3">
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${2*knee_mass}"/>
+			<xacro:inertia_rectangular mass="${2*knee_mass}" x="${knee_x}" y="${knee_radius}" z="${knee_radius}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+			<geometry>
+			<cylinder length="${knee_x}" radius="${knee_radius}" />
+			</geometry> 
+		</visual>
+	</link>
+<!-- ********************************************************************** -->
+<!-- Tibias 						                                        -->
+<!-- ********************************************************************** -->
+	<joint name="knee_1_to_tibia_1a" type="continuous">
+		<origin xyz="-${knee_x/2} 0 0" rpy="0 0 0"/>
+		<parent link="knee_1"/>
+		<child link="tibia_1a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="tibia_1a">
+		<inertial>
+			<origin xyz="0 0 ${tibia_z/2}" rpy="0 0 0"/>
+			<mass value="${tibia_mass}"/>
+			<xacro:inertia_rectangular mass="${tibia_mass}" x="${tibia_x}" y="${tibia_y}" z="${tibia_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
+
+	<joint name="knee_1_to_tibia_1b" type="continuous">
+		<origin xyz="${knee_x/2} 0 0" rpy="0 0 0"/>
+		<parent link="knee_1"/>
+		<child link="tibia_1b"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="tibia_1b">
+		<inertial>
+			<origin xyz="0 0 ${tibia_z/2}" rpy="0 0 0"/>
+			<mass value="${tibia_mass}"/>
+			<xacro:inertia_rectangular mass="${tibia_mass}" x="${tibia_x}" y="${tibia_y}" z="${tibia_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 ${PI}"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 ${PI}"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
+
+	<joint name="knee_2_to_tibia_2a" type="continuous">
+		<origin xyz="-${knee_x/2} 0 0" rpy="0 0 0"/>
+		<parent link="knee_2"/>
+		<child link="tibia_2a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="tibia_2a">
+		<inertial>
+			<origin xyz="0 0 ${tibia_z/2}" rpy="0 0 0"/>
+			<mass value="${tibia_mass}"/>
+			<xacro:inertia_rectangular mass="${tibia_mass}" x="${tibia_x}" y="${tibia_y}" z="${tibia_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
+
+	<joint name="knee_2_to_tibia_2b" type="continuous">
+		<origin xyz="${knee_x/2} 0 0" rpy="0 0 0"/>
+		<parent link="knee_2"/>
+		<child link="tibia_2b"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="tibia_2b">
+		<inertial>
+			<origin xyz="0 0 ${tibia_z/2}" rpy="0 0 0"/>
+			<mass value="${tibia_mass}"/>
+			<xacro:inertia_rectangular mass="${tibia_mass}" x="${tibia_x}" y="${tibia_y}" z="${tibia_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 ${PI}"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 ${PI}"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
+
+	<joint name="knee_3_to_tibia_3a" type="continuous">
+		<origin xyz="-${knee_x/2} 0 0" rpy="0 0 0"/>
+		<parent link="knee_3"/>
+		<child link="tibia_3a"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="tibia_3a">
+		<inertial>
+			<origin xyz="0 0 ${tibia_z/2}" rpy="0 0 0"/>
+			<mass value="${tibia_mass}"/>
+			<xacro:inertia_rectangular mass="${tibia_mass}" x="${tibia_x}" y="${tibia_y}" z="${tibia_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
+
+	<joint name="knee_3_to_tibia_3b" type="continuous">
+		<origin xyz="${knee_x/2} 0 0" rpy="0 0 0"/>
+		<parent link="knee_3"/>
+		<child link="tibia_3b"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="tibia_3b">
+		<inertial>
+			<origin xyz="0 0 ${tibia_z/2}" rpy="0 0 0"/>
+			<mass value="${tibia_mass}"/>
+			<xacro:inertia_rectangular mass="${tibia_mass}" x="${tibia_x}" y="${tibia_y}" z="${tibia_z}" />
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 ${PI}"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 ${PI}"/>
+			<geometry>
+			<mesh filename="package://delta_robot_support/urdf/meshes/Tibia_binary.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
+	</link>
+
 <!-- ****************************************************************** -->
-<!-- Brazo vertical de union con "upper_leg" 1 -->
+<!-- Ankles                                                             -->
 <!-- ****************************************************************** -->
-<!-- barilla horizontal de uninon entre "upper_leg" y la pata larga 1-->
-      <joint name="uleg1_con" type="continuous">
-    	   <origin xyz="0 -0.2 0" rpy="${PI/2-1.0358} 0 0"/>
-    	   <parent link="uleg_1"/>
-    	   <child link="con1"/>
-         <axis xyz="1 0 0"/>
-      </joint>
-
-      <link name="con1">
-        <inertial>
-          <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-          <mass value="${mass_con}"/>
-         	<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
+	<joint name="tibia_1b_to_ankle_1" type="continuous">
+        <origin xyz="0 0 ${tibia_z}" rpy="0 0 0"/>
+        <parent link="tibia_1b"/>
+        <child link="ankle_1"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="ankle_1">
+		<inertial>
+			<origin xyz="-${ankle_x/2} 0 0" rpy="0 0 0"/>
+			<mass value="${ankle_mass}"/>
+			<xacro:inertia_rectangular mass="${ankle_mass}" x="${ankle_x}" y="${ankle_radius}" z="${ankle_radius}" />
         </inertial>
         <visual>
-          <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-          <geometry>
-            <cylinder length="0.05" radius="0.002" />
-          </geometry>
+        	<origin xyz="-${ankle_x/2} 0 0" rpy="0 ${PI/2} 0"/>
+        	<geometry>
+        	<cylinder length="${ankle_x}" radius="${ankle_radius}" />
+        	</geometry>
         </visual>
-        <collision>
-       	  <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0 "/>
-          <geometry>
-            <cylinder length="0.05" radius="0.002" />
-          </geometry>
+	</link>
+	
+	<joint name="tibia_2b_to_ankle_2" type="continuous">
+        <origin xyz="0 0 ${tibia_z}" rpy="0 0 0"/>
+        <parent link="tibia_2b"/>
+        <child link="ankle_2"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="ankle_2">
+		<inertial>
+			<origin xyz="-${ankle_x/2} 0 0" rpy="0 0 0"/>
+			<mass value="${ankle_mass}"/>
+			<xacro:inertia_rectangular mass="${ankle_mass}" x="${ankle_x}" y="${ankle_radius}" z="${ankle_radius}" />
+        </inertial>
+        <visual>
+        	<origin xyz="-${ankle_x/2} 0 0" rpy="0 ${PI/2} 0"/>
+        	<geometry>
+        	<cylinder length="${ankle_x}" radius="${ankle_radius}" />
+        	</geometry>
+        </visual>
+	</link>
+
+	<joint name="tibia_3b_to_ankle_3" type="continuous">
+        <origin xyz="0 0 ${tibia_z}" rpy="0 0 0"/>
+        <parent link="tibia_3b"/>
+        <child link="ankle_3"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="ankle_3">
+		<inertial>
+			<origin xyz="-${ankle_x/2} 0 0" rpy="0 0 0"/>
+			<mass value="${ankle_mass}"/>
+			<xacro:inertia_rectangular mass="${ankle_mass}" x="${ankle_x}" y="${ankle_radius}" z="${ankle_radius}" />
+        </inertial>
+        <visual>
+        	<origin xyz="-${ankle_x/2} 0 0" rpy="0 ${PI/2} 0"/>
+        	<geometry>
+        	<cylinder length="${ankle_x}" radius="${ankle_radius}" />
+        	</geometry>
+        </visual>
+	</link>
+
+	<gazebo>
+	<joint name='tibia_1a_to_ankle_1' type='revolute'>
+        <child>ankle_1</child>
+        <parent>tibia_1a</parent>
+        <pose> -${ankle_x} 0 0 0 0 0 </pose>
+        <axis>
+     	   	<xyz>0 1 0</xyz>
+           	<limit>
+           		<lower>-360</lower>
+           		<upper>360</upper>
+        	</limit>
+            <dynamics>
+            	<spring_reference>0</spring_reference>
+            	<spring_stiffness>0</spring_stiffness>
+      	        <damping>0.000000</damping>
+                <friction>0.0000000</friction>
+            </dynamics>
+            <use_parent_model_frame>1</use_parent_model_frame>
+        </axis>
+    </joint>
+
+	<joint name='tibia_2a_to_ankle_2' type='revolute'>
+        <child>ankle_2</child>
+        <parent>tibia_2a</parent>
+        <pose> -${ankle_x} 0 0 0 0 0 </pose>
+        <axis>
+    	    <xyz>0 1 0</xyz>
+            <limit>
+        	    <lower>-360</lower>
+            	<upper>360</upper>
+            </limit>
+            <dynamics>
+            	<spring_reference>0</spring_reference>
+                <spring_stiffness>0</spring_stiffness>
+      	        <damping>0.000000</damping>
+                <friction>0.0000000</friction>
+            </dynamics>
+            <use_parent_model_frame>1</use_parent_model_frame>
+        </axis>
+    </joint>
+	
+	<joint name='tibia_3a_to_ankle_3' type='revolute'>
+        <child>ankle_3</child>
+        <parent>tibia_3a</parent>
+        <pose> -${ankle_x} 0 0 0 0 0 </pose>
+    	<axis>
+        	<xyz>0 1 0</xyz>
+            <limit>
+            	<lower>-360</lower>
+                <upper>360</upper>
+            </limit>
+            <dynamics>
+            	<spring_reference>0</spring_reference>
+                <spring_stiffness>0</spring_stiffness>
+      	        <damping>0.000000</damping>
+                <friction>0.0000000</friction>
+            </dynamics>
+            <use_parent_model_frame>1</use_parent_model_frame>
+        </axis>
+    </joint>
+</gazebo>
+<!-- ****************************************************************** -->
+<!-- End Effector                                                       -->
+<!-- ****************************************************************** -->
+    <joint name='ankle_1_to_ee' type='continuous'>
+    	<origin xyz="-${ankle_x/2} 0 0" rpy="${ankle_angle*DegToRad} 0 0"/>
+        <parent link="ankle_1"/>
+        <child link="ee"/>
+        <axis xyz="1 0 0"/>
+    </joint>
+
+    <link name='ee'>
+    	<inertial>
+			<origin xyz="0 ${ee_radius} 0 " rpy="0 0 0"/>
+			<mass value="${ee_mass}"/>
+			<xacro:inertia_rectangular mass="${ee_mass}" x="${ee_radius*5/3}" y="${ee_radius*5/3}" z="${ee_z}" />
+    	</inertial>
+
+        <visual>
+        	<origin xyz="0 ${ee_radius} 0" rpy="0 0 0"/>
+    	    <geometry>
+            <mesh filename="package://delta_robot_support/urdf/meshes/EE_binary.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+		<collision>
+        	<origin xyz="0 ${ee_radius} 0" rpy="0 0 0"/>
+    	    <geometry>
+            <mesh filename="package://delta_robot_support/urdf/meshes/EE_binary.stl" scale="0.001 0.001 0.001" />
+            </geometry>
         </collision>
-       </link>
-<!-- barilla vertical larga 1 -->
-       <joint name="con_lleg_1" type="continuous">
-         <origin xyz="-0.02 0 0" rpy="0 0 0"/>
-       	 <parent link="con1"/>
-       	 <child link="lleg_1"/>
-         <axis xyz="0 1 0"/>
-       </joint>
-
-       <link name="lleg_1">
-         <inertial>
-           <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-           <mass value="${mass_lleg}"/>
-        	 <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-         </inertial>
-         <visual>
-           <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-           <geometry>
-             <cylinder length="${length_lleg}" radius="${width_lleg}" />
-           </geometry>
-         </visual>
-         <collision>
-        	<origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-             <geometry>
-                 <cylinder length="${length_lleg}" radius="${width_lleg}" />
-             </geometry>
-           </collision>
-       </link>
-<!-- barilla vertical 2 -->
-       <joint name="con2_lleg_1" type="continuous">
-         <origin xyz="0.03 0 0" rpy="0 0 0"/>
-       	 <parent link="con1"/>
-       	 <child link="lleg_12"/>
-       	 <mimic joint="con_lleg_1"/>
-        <axis xyz="0 1 0"/>
-      </joint>
-
-       <link name="lleg_12">
-         <inertial>
-           <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-           <mass value="${mass_lleg}"/>
-        	 <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-          </inertial>
-
-          <visual>
-             <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-             <geometry>
-                 <cylinder length="${length_lleg}" radius="${width_lleg}" />
-             </geometry>
-          </visual>
-          <collision>
-        	   <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-              <geometry>
-                <cylinder length="${length_lleg}" radius="${width_lleg}" />
-              </geometry>
-          </collision>
-        </link>
-<!-- ****************************************************************** -->
-<!-- Brazo vertical de union con "upper_leg" 2 -->
-<!-- ****************************************************************** -->
-<!-- barilla horizontal de uninon entre "upper_leg" y la pata larga 2-->
-        <joint name="uleg2_con" type="continuous">
-          <origin xyz="0 -0.2 0" rpy="${PI/2-1.0358} 0 0"/>
-          <parent link="uleg_2"/>
-          <child link="con2"/>
-          <axis xyz="1 0 0"/>
-        </joint>
-
-        <link name="con2">
-          <inertial>
-            <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-            <mass value="${mass_con}"/>
-           	<xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-          </inertial>
-
-          <visual>
-            <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-            <geometry>
-                <cylinder length="0.05" radius="0.002" />
-            </geometry>
-          </visual>
-          <collision>
-         	  <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0 "/>
-              <geometry>
-                  <cylinder length="0.05" radius="0.002" />
-              </geometry>
-          </collision>
-         </link>
-<!-- barilla vertical larga 1 -->
-         <joint name="con_lleg_2" type="continuous">
-           <origin xyz="-0.02 0 0" rpy="0 0 0"/>
-         	 <parent link="con2"/>
-         	 <child link="lleg_2"/>
-           <axis xyz="0 1 0"/>
-         </joint>
-
-         <link name="lleg_2">
-           <inertial>
-            <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-            <mass value="${mass_lleg}"/>
-          	<xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-           </inertial>
-
-           <visual>
-             <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-             <geometry>
-                 <cylinder length="${length_lleg}" radius="${width_lleg}" />
-             </geometry>
-           </visual>
-           <collision>
-             <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-             <geometry>
-                 <cylinder length="${length_lleg}" radius="${width_lleg}" />
-             </geometry>
-           </collision>
-          </link>
-<!-- barilla vertical larga 2 -->
-          <joint name="con2_lleg_2" type="continuous">
-            <origin xyz="0.03 0 0" rpy="0 0 0"/>
-            <parent link="con2"/>
-            <child link="lleg_22"/>
-            <axis xyz="0 1 0"/>
-          </joint>
-
-          <link name="lleg_22">
-            <inertial>
-                <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-                <mass value="${mass_lleg}"/>
-           	    <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-            </inertial>
-
-            <visual>
-                <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-                <geometry>
-                    <cylinder length="${length_lleg}" radius="${width_lleg}" />
-                </geometry>
-            </visual>
-            <collision>
-           	  <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-                <geometry>
-                    <cylinder length="${length_lleg}" radius="${width_lleg}" />
-                </geometry>
-            </collision>
-           </link>
- <!-- ****************************************************************** -->
- <!-- Brazo vertical de union con "upper_leg" 3 -->
- <!-- ****************************************************************** -->
- <!-- barilla horizontal de uninon entre "upper_leg" y la pata larga 3-->
-         <joint name="uleg3_con" type="continuous">
-           <origin xyz="0 -0.2 0" rpy="${PI/2-1.0358} 0 0"/>
-           <parent link="uleg_3"/>
-           <child link="con3"/>
-           <axis xyz="1 0 0"/>
-         </joint>
-
-         <link name="con3">
-           <inertial>
-             <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-             <mass value="${mass_con}"/>
-        	    <xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-           </inertial>
-
-          <visual>
-             <origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0"/>
-             <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-             </geometry>
-          </visual>
-          <collision>
-          	<origin xyz="0.005 0 0 " rpy="0 ${PI/2} 0 "/>
-             <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-             </geometry>
-          </collision>
-        </link>
-
-<!-- barilla vertical larga 1 -->
-        <joint name="con_lleg_3" type="continuous">
-          <origin xyz="-0.02 0 0" rpy="0 0 0"/>
-          <parent link="con3"/>
-          <child link="lleg_3"/>
-          <axis xyz="0 1 0"/>
-        </joint>
-
-        <link name="lleg_3">
-          <inertial>
-            <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-            <mass value="${mass_lleg}"/>
-            <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-          </inertial>
-
-          <visual>
-            <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-            <geometry>
-                <cylinder length="${length_lleg}" radius="0.002" />
-            </geometry>
-          </visual>
-          <collision>
-            <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-            <geometry>
-                <cylinder length="${length_lleg}" radius="0.002" />
-            </geometry>
-          </collision>
-         </link>
-
-<!-- barilla vertical larga 1 -->
-        <joint name="con2_lleg_3" type="continuous">
-          <origin xyz="0.03 0 0" rpy="0 0 0"/>
-          <parent link="con3"/>
-          <child link="lleg_32"/>
-          <axis xyz="0 1 0"/>
-        </joint>
-
-        <link name="lleg_32">
-          <inertial>
-              <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-              <mass value="${mass_lleg}"/>
-              <xacro:default_inertial3 mass="${mass_lleg}" width="${length_lleg}" length="${width_lleg}" />
-          </inertial>
-
-          <visual>
-            <origin xyz=" 0 0 ${-length_lleg/2} " rpy="0 0 0"/>
-            <geometry>
-                <cylinder length="${length_lleg}" radius="${width_lleg}" />
-            </geometry>
-          </visual>
-          <collision>
-            <origin xyz="0 0 ${-length_lleg/2} " rpy="0 0 0 "/>
-            <geometry>
-                <cylinder length="${length_lleg}" radius="${width_lleg}" />
-            </geometry>
-          </collision>
-         </link>
-
-<!-- ****************************************************************** -->
-<!-- Barillas horizontales de abajo de las patas -->
-<!-- ****************************************************************** -->
-<!-- barilla horizontal de abajo de uninon entre "upper_leg" y la pata larga 3-->
-         <joint name="con33_lleg_3" type="continuous">
-           <origin xyz="0 0 -0.51" rpy="0 0 0"/>
-         	 <parent link="lleg_32"/>
-         	 <child link="con33"/>
-           <axis xyz="0 1 0"/>
-         </joint>
-
-         <link name="con33">
-           <inertial>
-             <origin xyz="-0.025  0 0 " rpy="0 ${PI/2} 0"/>
-             <mass value="${mass_con}"/>
-        	   <xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-          </inertial>
-
-           <visual>
-             <origin xyz="-0.025 0 0  " rpy="0 ${PI/2} 0"/>
-             <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-             </geometry>
-           </visual>
-           <collision>
-        	    <origin xyz="-0.025 0  0 " rpy="0 ${PI/2} 0 "/>
-              <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-               </geometry>
-           </collision>
-          </link>
-
-<!-- barilla horizontal de abajo de uninon entre "upper_leg" y la pata larga 2-->
-          <joint name="con23_lleg_2" type="continuous">
-            <origin xyz="0 0 -0.51" rpy="0 0 0"/>
-            <parent link="lleg_22"/>
-            <child link="con23"/>
-            <axis xyz="0 1 0"/>
-          </joint>
-
-          <link name="con23">
-            <inertial>
-              <origin xyz="-0.025  0 0 " rpy="0 ${PI/2} 0"/>
-              <mass value="${mass_con}"/>
-           	  <xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-            </inertial>
-
-            <visual>
-              <origin xyz="-0.025 0 0  " rpy="0 ${PI/2} 0"/>
-              <geometry>
-                  <cylinder length="0.05" radius="0.002" />
-              </geometry>
-            </visual>
-            <collision>
-         	    <origin xyz="-0.025 0  0 " rpy="0 ${PI/2} 0 "/>
-              <geometry>
-                  <cylinder length="0.05" radius="0.002" />
-              </geometry>
-            </collision>
-         </link>
-
-<!-- barilla horizontal de abajo de uninon entre "upper_leg" y la pata larga 1-->
-         <joint name="con13_lleg_1" type="continuous">
-           <origin xyz="0 0 -0.51" rpy="0 0 0"/>
-           <parent link="lleg_12"/>
-           <child link="con13"/>
-           <axis xyz="0 1 0"/>
-         </joint>
-
-         <link name="con13">
-           <inertial>
-             <origin xyz="-0.025  0 0 " rpy="0 ${PI/2} 0"/>
-             <mass value="${mass_con}"/>
-        	   <xacro:default_inertial2 mass="${mass_con}" width="0.002" length="0.05" />
-           </inertial>
-
-           <visual>
-             <origin xyz="-0.025 0 0  " rpy="0 ${PI/2} 0"/>
-             <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-             </geometry>
-           </visual>
-           <collision>
-        	    <origin xyz="-0.025 0  0 " rpy="0 ${PI/2} 0 "/>
-              <geometry>
-                 <cylinder length="0.05" radius="0.002" />
-               </geometry>
-           </collision>
-        </link>
-
-
-<!-- ****************************************************************** -->
-<!-- Union inferior de las patas con el end effector -->
-<!-- ****************************************************************** -->
-<!-- Union de la pata larga 1-->
-        <joint name='lleg1_base' type='continuous'>
-          <origin xyz=" 0 0 0" rpy="-0.5 0 0"/>
-          <parent link="con13"/>
-          <child link="low_base"/>
-          <axis xyz="1 0 0"/>
-        </joint>
-
-        <link name='low_base'>
-          <inertial>
-            <origin xyz="${-length_m} ${length_m} 0" rpy="0 -0 0"/>
-            <mass value="${mass_low_base}"/>
-           	<xacro:default_inertial3 mass="${mass_low_base}" width="${length_m}" length="${length_m}" />
-          </inertial>
-          <visual name='low_base_visual'>
-            <origin xyz="-0.07 -0.015 -0.012" rpy="0 -0 0"/>
-    	      <geometry>
-              <mesh filename="package://delta_robot_support/urdf/meshes/Platform.STL" scale="0.001 0.001 0.001" />
-            </geometry>
-          </visual>
-        </link>
-
-<!-- ****************************************************************** -->
-<!-- Joins entre las uniones inferiores de end effector  -->
-<!-- ****************************************************************** -->
-<!-- join union del end effector y la barilla 1 de la patas largas 1 y 2-->
-        <gazebo>
-          <joint name='lleg2_base' type='revolute'>
-            <child>con23</child>
-            <parent>low_base</parent>
-      	    <pose> 0 0 0 0 0 0 </pose>
-            <axis>
-              <xyz>1 0 0</xyz>
-              <limit>
-                <lower>-100</lower>
-                <upper>100</upper>
-              </limit>
-               <dynamics>
-                <spring_reference>0</spring_reference>
+	</link>
+	
+	<gazebo>
+	<joint name='ee_to_ankle_2' type='revolute'>
+		<child>ankle_2</child>
+		<parent>ee</parent>
+		<pose> -${ankle_x/2} 0 0 ${ankle_angle*DegToRad} 0 0 </pose>
+		<axis>
+			<xyz>1 0 0</xyz>
+			<limit>
+            	<lower>-360</lower>
+            	<upper>360</upper>
+            </limit>
+        	<dynamics>
+            	<spring_reference>0</spring_reference>
                 <spring_stiffness>0</spring_stiffness>
-      	         <damping>0.000000</damping>
-                <friction>0.00030000</friction>
-              </dynamics>
-              <use_parent_model_frame>0</use_parent_model_frame>
-            </axis>
-          </joint>
-<!-- join union del end effector y la barilla 1 de la pata larga  3-->
-          <joint name='lleg3_base' type='revolute'>
-            <child>con33</child>
-            <parent>low_base</parent>
-            <pose> 0 0 0 0 0 0 </pose>
-            <axis>
-              <xyz>1 0 0</xyz>
-              <limit>
-                <lower>-100</lower>
-                <upper>100</upper>
-              </limit>
-              <dynamics>
-                <spring_reference>0</spring_reference>
-                <spring_stiffness>0</spring_stiffness>
-      	        <damping>0.000000</damping>
-                <friction>0.00030000</friction>
-              </dynamics>
-              <use_parent_model_frame>0</use_parent_model_frame>
-            </axis>
-          </joint>
+      	    	<damping>0.000000</damping>
+            	<friction>0.0000000</friction>
+            </dynamics>
+            <use_parent_model_frame>0</use_parent_model_frame>
+        </axis>
+    </joint>
 
-<!-- join union del end effector y la barilla 2 de la pata larga  1-->
-          <joint name='con13_lleg_12' type='revolute'>
-            <child>con13</child>
-            <parent>lleg_1</parent>
-            <pose> -0.05 0 0 0 0 0 </pose>
-            <axis>
-              <xyz>0 1 0</xyz>
-              <limit>
-                <lower>-100</lower>
-                <upper>100</upper>
-              </limit>
-              <dynamics>
-                <spring_reference>0</spring_reference>
-                <spring_stiffness>0</spring_stiffness>
-      	        <damping>0.000000</damping>
-                <friction>0.00030000</friction>
-              </dynamics>
-              <use_parent_model_frame>0</use_parent_model_frame>
-            </axis>
-          </joint>
-
-<!-- join union del end effector y la barilla 2 de la pata larga  2-->
-          <joint name='con23_lleg_22' type='revolute'>
-            <child>con23</child>
-            <parent>lleg_2</parent>
-            <pose> -0.05 0 0 0 0 0 </pose>
-            <axis>
-              <xyz>0 1 0</xyz>
-              <limit>
-                <lower>-100</lower>
-                <upper>100</upper>
-              </limit>
-               <dynamics>
-                <spring_reference>0</spring_reference>
-                <spring_stiffness>0</spring_stiffness>
-      	        <damping>0.000000</damping>
-                <friction>0.00030000</friction>
-              </dynamics>
-              <use_parent_model_frame>0</use_parent_model_frame>
-            </axis>
-          </joint>
-
-<!-- join union del end effector y la barilla 2 de la pata larga  3-->
-          <joint name='con33_lleg_32' type='revolute'>
-            <child>con33</child>
-            <parent>lleg_3</parent>
-            <pose> -0.05 0 0 0 0 0 </pose>
-            <axis>
-              <xyz>0 1 0</xyz>
-              <limit>
-                <lower>-100</lower>
-                <upper>100</upper>
-              </limit>
-              <dynamics>
-                <spring_reference>0</spring_reference>
-                <spring_stiffness>0</spring_stiffness>
-      	        <damping>0.000000</damping>
-                <friction>0.00030000</friction>
-              </dynamics>
-              <use_parent_model_frame>0</use_parent_model_frame>
-            </axis>
-          </joint>
-        </gazebo>
-
+	<joint name='ee_to_ankle_3' type='revolute'>
+        <child>ankle_3</child>
+        <parent>ee</parent>
+        <pose> -${ankle_x/2} 0 0 ${ankle_angle*DegToRad} 0 0 </pose>
+        <axis>
+            <xyz>1 0 0</xyz>
+            <limit>
+    	        <lower>-360</lower>
+                <upper>360</upper>
+            </limit>
+            <dynamics>
+            	<spring_reference>0</spring_reference>
+            	<spring_stiffness>0</spring_stiffness>
+      		    <damping>0.000000</damping>
+                <friction>0.0000000</friction>
+            </dynamics>
+            <use_parent_model_frame>0</use_parent_model_frame>
+        </axis>
+	</joint>
+	</gazebo>
 <!-- ****************************************************************** -->
 <!-- Joins trabsmisions motors for gazebo  -->
 <!-- ****************************************************************** -->
@@ -795,40 +752,39 @@
             </plugin>
         </gazebo> -->
 
-    <transmission name="motor1_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <actuator name="motor1">
+	<transmission name="motor1_trans">
+    	<type>transmission_interface/SimpleTransmission</type>
+      	<actuator name="motor1">
         <mechanicalReduction>1</mechanicalReduction>
-      </actuator>
-      <joint name="link_0_JOINT_1">
+      	</actuator>
+   		<joint name="hip_1">
         <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-      </joint>
-    </transmission>
+    	</joint>
+	</transmission>
 
     <transmission name="motor2_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <actuator name="motor2">
+	    <type>transmission_interface/SimpleTransmission</type>
+    	<actuator name="motor2">
         <mechanicalReduction>1</mechanicalReduction>
-      </actuator>
-      <joint name="link_0_JOINT_2">
+      	</actuator>
+     	<joint name="hip_2">
         <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-      </joint>
+    	</joint>
     </transmission>
 
     <transmission name="motor3_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <actuator name="motor3">
+    	<type>transmission_interface/SimpleTransmission</type>
+      	<actuator name="motor3">
         <mechanicalReduction>1</mechanicalReduction>
-      </actuator>
-      <joint name="link_0_JOINT_3">
-        <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
-      </joint>
+		</actuator>
+    	<joint name="hip_3">
+		<hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    	</joint>
     </transmission>
     
     <gazebo>
-      <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-         <robotNamespace>/</robotNamespace>
-       </plugin>
+    	<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+        <robotNamespace>/</robotNamespace>
+       	</plugin>
     </gazebo>
-
 </robot>

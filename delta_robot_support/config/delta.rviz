@@ -58,87 +58,87 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        con1:
+        knee_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        con13:
+        ankle_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        con2:
+        knee_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        con23:
+        ankle_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        con3:
+        knee_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        con33:
+        ankle_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        link_0:
+        base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        lleg_1:
+        tibia_1a:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        lleg_12:
+        tibia_1b:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        lleg_2:
+        tibia_2a:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        lleg_22:
+        tibia_2b:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        lleg_3:
+        tibia_3a:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        lleg_32:
+        tibia_3b:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        low_base:
+        ee:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        uleg_1:
+        femur_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        uleg_2:
+        femur_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        uleg_3:
+        femur_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
